@@ -15,11 +15,9 @@ cache: bundler
 addons:
   postgresql: "10"
 
-env:
-  - SHINYCMS_THEME=TEST
-
 before_install:
   - npm install mjml
+  - gem install bundler
 
 before_script:
   - bundle exec rails assets:precompile

@@ -8,11 +8,12 @@
 general_cc    = seed CapabilityCategory, { name: 'general'        }
 blogs_cc      = seed CapabilityCategory, { name: 'blogs'          }
 blog_posts_cc = seed CapabilityCategory, { name: 'blog_posts'     }
-comments_cc   = seed CapabilityCategory, { name: 'comments'       }
 discussion_cc = seed CapabilityCategory, { name: 'discussions'    }
+comments_cc   = seed CapabilityCategory, { name: 'comments'       }
+spam_cc       = seed CapabilityCategory, { name: 'spam_comments'  }
 features_cc   = seed CapabilityCategory, { name: 'feature_flags'  }
 inserts_cc    = seed CapabilityCategory, { name: 'inserts'        }
-news_cc       = seed CapabilityCategory, { name: 'news'           }
+news_cc       = seed CapabilityCategory, { name: 'news_posts'     }
 pages_cc      = seed CapabilityCategory, { name: 'pages'          }
 sections_cc   = seed CapabilityCategory, { name: 'page_sections'  }
 templates_cc  = seed CapabilityCategory, { name: 'page_templates' }
@@ -24,7 +25,7 @@ admins_cc     = seed CapabilityCategory, { name: 'admin_users'    }
 seed Capability, { name: 'view_admin_area'      }, { category: general_cc }
 seed Capability, { name: 'view_admin_dashboard' }, { category: general_cc }
 seed Capability, { name: 'view_admin_toolbar'   }, { category: general_cc }
-# Blogs#
+# Blogs
 seed Capability, { name: 'list',    category: blogs_cc }
 seed Capability, { name: 'add',     category: blogs_cc }
 seed Capability, { name: 'edit',    category: blogs_cc }
@@ -35,17 +36,21 @@ seed Capability, { name: 'add',           category: blog_posts_cc }
 seed Capability, { name: 'edit',          category: blog_posts_cc }
 seed Capability, { name: 'destroy',       category: blog_posts_cc }
 seed Capability, { name: 'change_author', category: blog_posts_cc }
-# Comments
-seed Capability, { name: 'hide',    category: comments_cc }
-seed Capability, { name: 'unhide',  category: comments_cc }
-seed Capability, { name: 'lock',    category: comments_cc }
-seed Capability, { name: 'unlock',  category: comments_cc }
-seed Capability, { name: 'delete',  category: comments_cc }
 # Discussions
 seed Capability, { name: 'hide',    category: discussion_cc }
 seed Capability, { name: 'unhide',  category: discussion_cc }
 seed Capability, { name: 'lock',    category: discussion_cc }
 seed Capability, { name: 'unlock',  category: discussion_cc }
+# Comments
+seed Capability, { name: 'hide',    category: comments_cc }
+seed Capability, { name: 'unhide',  category: comments_cc }
+seed Capability, { name: 'lock',    category: comments_cc }
+seed Capability, { name: 'unlock',  category: comments_cc }
+seed Capability, { name: 'destroy', category: comments_cc }
+# Spam Comments
+seed Capability, { name: 'list',    category: spam_cc }
+seed Capability, { name: 'add',     category: spam_cc }
+seed Capability, { name: 'destroy', category: spam_cc }
 # Feature Flags
 seed Capability, { name: 'list',    category: features_cc }
 seed Capability, { name: 'edit',    category: features_cc }
@@ -94,25 +99,49 @@ seed Capability, { name: 'destroy', category: admins_cc }
 
 # Feature Flags (to turn on/off areas of site functionality)
 seed FeatureFlag, { name: 'blogs' }, {
-  description: 'Enable blog (or blogs) feature',
+  description: 'Turn this on if you want a blog on your site',
   enabled: true,
   enabled_for_logged_in: true,
   enabled_for_admins: true
 }
 seed FeatureFlag, { name: 'comments' }, {
-  description: 'Enable comments features',
+  description: 'Enable comment and discussion features site-wide',
+  enabled: true,
+  enabled_for_logged_in: true,
+  enabled_for_admins: true
+}
+seed FeatureFlag, { name: 'comment_notifications' }, {
+  description: 'Send notification emails to people who get comments',
   enabled: true,
   enabled_for_logged_in: true,
   enabled_for_admins: true
 }
 seed FeatureFlag, { name: 'news' }, {
-  description: 'Enable news feature',
+  description: 'Add a news section to your site',
+  enabled: true,
+  enabled_for_logged_in: true,
+  enabled_for_admins: true
+}
+seed FeatureFlag, { name: 'akismet_on_comments' }, {
+  description: 'Detect spam comments with Akismet',
+  enabled: true,
+  enabled_for_logged_in: true,
+  enabled_for_admins: true
+}
+seed FeatureFlag, { name: 'recaptcha_on_comment_form' }, {
+  description: 'Protect comment forms with reCAPTCHA',
+  enabled: true,
+  enabled_for_logged_in: true,
+  enabled_for_admins: true
+}
+seed FeatureFlag, { name: 'recaptcha_on_registration_form' }, {
+  description: 'Protect user registration form with reCAPTCHA',
   enabled: true,
   enabled_for_logged_in: true,
   enabled_for_admins: true
 }
 seed FeatureFlag, { name: 'tags' }, {
-  description: 'Enable tag features',
+  description: 'Turn on site-wide tag features',
   enabled: true,
   enabled_for_logged_in: true,
   enabled_for_admins: true
@@ -130,7 +159,7 @@ seed FeatureFlag, { name: 'user_profiles' }, {
   enabled_for_admins: true
 }
 seed FeatureFlag, { name: 'user_registration' }, {
-  description: 'Allow users to create accounts',
+  description: 'Allow new users to create an account',
   enabled: false,
   enabled_for_logged_in: false,
   enabled_for_admins: false
@@ -141,7 +170,7 @@ InsertSet.create! if InsertSet.first.blank?
 
 # Settings
 setting = seed Setting, { name: 'admin_ip_list' }, {
-  description: 'Comma/space-separated list of IP addresses allowed to access admin area',
+  description: 'IP addresses allowed to access admin area (comma-separated)',
   level: 'site',
   locked: true
 }
@@ -157,9 +186,10 @@ setting.values.create_or_find_by!( value: '' )
 setting = seed Setting, { name: 'allowed_to_comment' }, {
   description: 'Lowest-ranking user-type (Anonymous/Pseudonymous/Authenticated/None) that is allowed to post comments',
   level: 'site',
-  locked: true
+  locked: false
 }
 setting.values.create_or_find_by!( value: 'Anonymous' )
+setting.update( locked: true )
 
 setting = seed Setting, { name: 'default_page' }, {
   description: 'Default top-level page (either its name or its slug)',
@@ -182,12 +212,19 @@ setting = seed Setting, { name: 'post_login_redirect' }, {
 }
 setting.values.create_or_find_by!( value: '/' )
 
-setting = seed Setting, { name: 'recaptcha_v3_registration_score' }, {
+setting = seed Setting, { name: 'recaptcha_comment_score' }, {
+  description: 'Minimum score for reCAPTCHA V3 on anon/pseudonymous comments',
+  level: 'admin',
+  locked: true
+}
+setting.values.create_or_find_by!( value: '0.6' )
+
+setting = seed Setting, { name: 'recaptcha_registration_score' }, {
   description: 'Minimum score for reCAPTCHA V3 on user registration',
   level: 'admin',
   locked: true
 }
-setting.values.create_or_find_by!( value: '0.5' )
+setting.values.create_or_find_by!( value: '0.4' )
 
 setting = seed Setting, { name: 'tag_view' }, {
   description: "('cloud' or 'list')",
@@ -201,7 +238,11 @@ setting = seed Setting, { name: 'theme_name' }, {
   level: 'site',
   locked: false
 }
-setting.values.create_or_find_by!( value: 'halcyonic' )
+setting.values.create_or_find_by!( value: '' )
 
 # Let people know how to set up an admin user
-puts 'To generate a ShinyCMS super-admin user: rails shiny:admin:create'
+unless Rails.env.test? || User.that_can( :add, :admin_users ).present?
+  # :nocov:
+  puts 'To generate a ShinyCMS super-admin user: rails shiny:admin:create'
+  # :nocov:
+end

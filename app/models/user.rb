@@ -29,6 +29,10 @@ class User < ApplicationRecord
   has_many :user_capabilities, dependent: :destroy
   has_many :capabilities, through: :user_capabilities, inverse_of: :users
 
+  # User's custom site settings
+  has_many :settings, class_name: 'SettingValue', inverse_of: :user,
+                      dependent: :destroy
+
   # Web stats (powered by Ahoy)
   has_many :visits, class_name: 'Ahoy::Visit', dependent: :nullify
 
@@ -56,12 +60,16 @@ class User < ApplicationRecord
     capabilities.exists? name: 'view_admin_area', category: general
   end
 
+  def not_admin?
+    !admin?
+  end
+
   def can?( capability_name, category_name = :general )
     cc = CapabilityCategory.find_by( name: category_name.to_s )
     return true if capabilities.exists? name: capability_name.to_s, category: cc
 
-    Rails.logger.debug  "Capability check failed: '#{username}' " \
-                        "cannot '#{capability_name}' '#{category_name}'"
+    Rails.logger.debug  'Capability check failed: ' \
+                        "#{username} cannot #{capability_name} #{category_name}"
     false
   end
 
@@ -77,6 +85,15 @@ class User < ApplicationRecord
     end
 
     user_capabilities.where( capability_id: remove ).delete_all
+  end
+
+  def grant_all_capabilities
+    User.transaction do
+      Capability.all.find_each do |capability|
+        user_capabilities.find_or_create_by! capability: capability
+      end
+    end
+    self
   end
 
   def display_name_or_username

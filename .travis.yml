@@ -15,7 +15,6 @@ addons:
   postgresql: "10"
 
 before_install:
-  - npm install mjml
   - gem install bundler
 
 before_script:

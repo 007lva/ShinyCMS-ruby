@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_03_08_113704) do
+ActiveRecord::Schema.define(version: 2020_03_27_014155) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -135,6 +135,17 @@ ActiveRecord::Schema.define(version: 2020_03_08_113704) do
     t.datetime "posted_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["number", "discussion_id"], name: "index_comments_on_number_and_discussion_id", unique: true
+  end
+
+  create_table "consents", force: :cascade do |t|
+    t.string "purpose_type", null: false
+    t.integer "purpose_id", null: false
+    t.string "action", null: false
+    t.text "wording", null: false
+    t.string "url"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "discussions", force: :cascade do |t|
@@ -145,6 +156,24 @@ ActiveRecord::Schema.define(version: 2020_03_08_113704) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["resource_type", "resource_id"], name: "index_discussions_on_resource_type_and_resource_id"
+  end
+
+  create_table "do_not_contacts", force: :cascade do |t|
+    t.string "email"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["email"], name: "index_do_not_contacts_on_email", unique: true
+  end
+
+  create_table "email_recipients", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "canonical_email", null: false
+    t.uuid "token", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["email"], name: "index_email_recipients_on_email", unique: true
+    t.index ["token"], name: "index_email_recipients_on_token", unique: true
   end
 
   create_table "feature_flags", force: :cascade do |t|
@@ -170,6 +199,13 @@ ActiveRecord::Schema.define(version: 2020_03_08_113704) do
   end
 
   create_table "insert_sets", force: :cascade do |t|
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "mailing_lists", force: :cascade do |t|
+    t.string "name", null: false
+    t.boolean "is_public", default: false, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
@@ -261,6 +297,7 @@ ActiveRecord::Schema.define(version: 2020_03_08_113704) do
     t.string "value"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["setting_id", "user_id"], name: "index_setting_values_on_setting_id_and_user_id", unique: true
   end
 
   create_table "settings", force: :cascade do |t|
@@ -268,6 +305,14 @@ ActiveRecord::Schema.define(version: 2020_03_08_113704) do
     t.string "description"
     t.string "level", default: "site", null: false
     t.boolean "locked", default: true, null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "subscriptions", force: :cascade do |t|
+    t.integer "list_id", null: false
+    t.integer "subscriber_id", null: false
+    t.string "subscriber_type", default: "EmailRecipient", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
@@ -310,6 +355,7 @@ ActiveRecord::Schema.define(version: 2020_03_08_113704) do
   create_table "users", force: :cascade do |t|
     t.string "username", default: "", null: false
     t.string "email", default: "", null: false
+    t.string "canonical_email", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "display_name"
     t.string "display_email"
